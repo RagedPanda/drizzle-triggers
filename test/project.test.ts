@@ -37,7 +37,7 @@ test('schemaFiles expands files, folders and globs, without declaration files', 
 		'src/other.ts': '',
 		'notes.md': '',
 	});
-	const relative = (files: string[]) => files.map(file => path.relative(folder, file));
+	const relative = (files: string[]) => files.map(file => path.relative(folder, file).split(path.sep).join('/'));
 	assert.deepEqual(relative(schemaFiles(folder, ['./src/db'])), ['src/db/schema.ts', 'src/db/tables/posts.mjs', 'src/db/tables/users.ts']);
 	assert.deepEqual(relative(schemaFiles(folder, ['src/**/users.*', './src/other.ts', 'src/other.ts'])), ['src/db/tables/users.ts', 'src/other.ts']);
 	assert.deepEqual(schemaFiles(folder, ['missing.ts']), []);
