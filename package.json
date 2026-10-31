@@ -1,6 +1,6 @@
 {
 	"name": "drizzle-triggers",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "Postgres functions and triggers for Drizzle ORM: define them next to your tables in TypeScript and get them as Drizzle migrations",
 	"license": "MIT",
 	"author": "Ankur Dubey (https://github.com/RagedPanda)",
