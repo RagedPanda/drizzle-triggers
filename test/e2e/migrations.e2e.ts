@@ -93,5 +93,5 @@ test('generate, check and migrate a real project with drizzle-kit', {timeout: 12
 	await migrate(db, {migrationsFolder: outFolder});
 	await db.execute(sql`UPDATE users SET status = 'banned'`);
 	await assert.rejects(db.execute(sql`UPDATE users SET status = 'blocked'`), rejection(/rejected blocked/));
-	assert.match(output.join('\n'), /Wrote 4 statements to drizzle\/.*triggers[^\n]*\n[\s\S]*Wrote 2 statements to drizzle\/.*block/);
+	assert.match(output.join('\n'), /Wrote 4 statements to drizzle[\\/].*triggers[^\n]*\n[\s\S]*Wrote 2 statements to drizzle[\\/].*block/);
 });
