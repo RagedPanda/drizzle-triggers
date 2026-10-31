@@ -1,5 +1,14 @@
 # drizzle-triggers
 
+[![npm version](https://img.shields.io/npm/v/drizzle-triggers)](https://www.npmjs.com/package/drizzle-triggers)
+[![CI](https://github.com/RagedPanda/drizzle-triggers/actions/workflows/ci.yml/badge.svg)](https://github.com/RagedPanda/drizzle-triggers/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/RagedPanda/drizzle-triggers/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/drizzle-triggers)](https://www.npmjs.com/package/drizzle-triggers)
+[![types](https://img.shields.io/npm/types/drizzle-triggers)](https://www.npmjs.com/package/drizzle-triggers)
+[![drizzle-orm](https://img.shields.io/npm/dependency-version/drizzle-triggers/peer/drizzle-orm)](https://orm.drizzle.team)
+[![node](https://img.shields.io/node/v/drizzle-triggers)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/drizzle-triggers)](LICENSE)
+
 Postgres functions and triggers for [Drizzle ORM](https://orm.drizzle.team). Define them next to your tables in TypeScript, and get them as ordinary Drizzle migrations.
 
 ```ts
