@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-31
+
+### Changed
+
+- Releases are now published from GitHub Actions with npm provenance, so you can check that each version on npm was built from this repository. There are no code changes since 0.1.0.
+
 ## [0.1.0] - 2026-10-31
 
 ### Added
@@ -18,5 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `applyDefinitions()` sets up functions and triggers without migrations, for tests and `drizzle-kit push` setups.
 - Works with Drizzle ORM 0.36.4 and later, including 1.0, in ESM and CommonJS projects.
 
-[unreleased]: https://github.com/RagedPanda/drizzle-triggers/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/RagedPanda/drizzle-triggers/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/RagedPanda/drizzle-triggers/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/RagedPanda/drizzle-triggers/releases/tag/v0.1.0
