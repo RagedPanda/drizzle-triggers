@@ -12,7 +12,7 @@
 	"main": "./dist/cjs/index.js",
 	"types": "./dist/cjs/index.d.ts",
 	"bin": {
-		"drizzle-triggers": "./dist/esm/cli/bin.js"
+		"drizzle-triggers": "dist/esm/cli/bin.js"
 	},
 	"exports": {
 		".": {
