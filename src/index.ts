@@ -5,5 +5,7 @@ export {
 	type Definition, type FunctionArgument, type FunctionOptions, type NamedReference, type PgFunctionDefinition,
 	type PgTriggerDefinition, type TriggerEvent, type TriggerOptions, type TriggerRows, type TriggerTiming, type Volatility,
 } from './definitions.ts';
+export {latestState, readState, renderMigration} from './migration.ts';
 export {createFunctionSql, createTriggerSql, dropFunctionSql, dropTriggerSql} from './render.ts';
+export {buildSnapshot, diff, emptyState, idempotentStatements, toState, type FunctionState, type Snapshot, type State, type TriggerState} from './snapshot.ts';
 export type {SqlText} from './sql-text.ts';
