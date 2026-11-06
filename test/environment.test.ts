@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {test} from 'node:test';
-import {drizzleKitBin, exitCode, nodeEnvironment} from '../src/cli/environment.ts';
+import {drizzleKitBin, exitCode, nodeEnvironment, parseJsonc, tsconfigAliases} from '../src/cli/environment.ts';
 import {temporaryProject} from './helpers.ts';
 
 function fakeDrizzleKit(bin: unknown) {
@@ -50,4 +50,54 @@ test('exitCode treats a missing status, from a killed process, as a failure', ()
 	assert.equal(exitCode(0), 0);
 	assert.equal(exitCode(2), 2);
 	assert.equal(exitCode(null), 1);
+});
+
+test('parseJsonc ignores comments and trailing commas, but not inside strings', () => {
+	const text = '{\n\t// comment\n\t"a": "// kept", /* block */ "b": ["/* kept */", "\\"",],\n}';
+	assert.deepEqual(parseJsonc(text), {a: '// kept', b: ['/* kept */', '"']});
+});
+
+test('tsconfigAliases maps tsconfig paths to jiti aliases', t => {
+	assert.deepEqual(tsconfigAliases(temporaryProject(t)), {});
+	assert.deepEqual(tsconfigAliases(temporaryProject(t, {'tsconfig.json': '{}'})), {});
+
+	const cwd = temporaryProject(t, {
+		'tsconfig.json': JSON.stringify({compilerOptions: {paths: {
+			'@/*': ['./*'],
+			'~lib': ['./src/lib.ts'],
+			'none/*': [],
+			'mid/*/x': ['./mid/*/x'],
+			'star/*': ['./star'],
+		}}}),
+	});
+	assert.deepEqual(tsconfigAliases(cwd), {'@/': `${cwd}/`, '~lib': path.join(cwd, 'src/lib.ts')});
+});
+
+test('tsconfigAliases follows extends and resolves paths from baseUrl or the config that defines them', t => {
+	const inherited = temporaryProject(t, {
+		'tsconfig.json': JSON.stringify({extends: './config/base.json'}),
+		'config/base.json': '{"compilerOptions": {"paths": {"@/*": ["../src/*"]}}}',
+	});
+	assert.deepEqual(tsconfigAliases(inherited), {'@/': path.join(inherited, 'src/')});
+
+	const withBaseUrl = temporaryProject(t, {
+		'tsconfig.json': JSON.stringify({extends: ['./config/base.json'], compilerOptions: {paths: {'#/*': ['*']}}}),
+		'config/base.json': '{"compilerOptions": {"baseUrl": "../src"}}',
+	});
+	assert.deepEqual(tsconfigAliases(withBaseUrl), {'#/': path.join(withBaseUrl, 'src/')});
+
+	const overridden = temporaryProject(t, {
+		'tsconfig.json': JSON.stringify({extends: './base.json', compilerOptions: {baseUrl: '.'}}),
+		'base.json': '{"compilerOptions": {}}',
+	});
+	assert.deepEqual(tsconfigAliases(overridden), {});
+});
+
+test('nodeEnvironment resolves imports through tsconfig paths', async t => {
+	const cwd = temporaryProject(t, {
+		'tsconfig.json': '{\n\t"compilerOptions": {\n\t\t// aliases\n\t\t"paths": {"@/*": ["./*"]},\n\t},\n}',
+		'db/schema.ts': 'import {answer} from \'@/shared/answer\';\nexport const value: number = answer;\n',
+		'shared/answer.ts': 'export const answer = 42;\n',
+	});
+	assert.deepEqual({...await nodeEnvironment(cwd).importModule(path.join(cwd, 'db/schema.ts')) as object}, {value: 42});
 });
