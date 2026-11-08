@@ -70,7 +70,7 @@ test('tsconfigAliases maps tsconfig paths to jiti aliases', t => {
 			'star/*': ['./star'],
 		}}}),
 	});
-	assert.deepEqual(tsconfigAliases(cwd), {'@/': `${cwd}/`, '~lib': path.join(cwd, 'src/lib.ts')});
+	assert.deepEqual(tsconfigAliases(cwd), {'@/': path.join(cwd, '/'), '~lib': path.join(cwd, 'src/lib.ts')});
 });
 
 test('tsconfigAliases follows extends and resolves paths from baseUrl or the config that defines them', t => {
