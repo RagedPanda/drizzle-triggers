@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Schema files that import through tsconfig `paths` aliases now load. The CLI reads `paths` and `baseUrl` from your tsconfig.json, including configs it `extends`, so you no longer need to repeat them in `JITI_ALIAS`. Aliases set in `JITI_ALIAS` still apply and take precedence. ([#6](https://github.com/RagedPanda/drizzle-triggers/pull/6) by [@Wonkers0](https://github.com/Wonkers0), with the `JITI_ALIAS` and package `extends` follow-ups by [@RagedPanda](https://github.com/RagedPanda))
+
 ## [0.1.1] - 2026-10-31
 
 ### Changed

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {test} from 'node:test';
-import {drizzleKitBin, exitCode, nodeEnvironment, parseJsonc, tsconfigAliases} from '../src/cli/environment.ts';
+import {drizzleKitBin, environmentAliases, exitCode, nodeEnvironment, parseJsonc, tsconfigAliases} from '../src/cli/environment.ts';
 import {temporaryProject} from './helpers.ts';
 
 function fakeDrizzleKit(bin: unknown) {
@@ -98,6 +98,46 @@ test('nodeEnvironment resolves imports through tsconfig paths', async t => {
 		'tsconfig.json': '{\n\t"compilerOptions": {\n\t\t// aliases\n\t\t"paths": {"@/*": ["./*"]},\n\t},\n}',
 		'db/schema.ts': 'import {answer} from \'@/shared/answer\';\nexport const value: number = answer;\n',
 		'shared/answer.ts': 'export const answer = 42;\n',
+	});
+	assert.deepEqual({...await nodeEnvironment(cwd).importModule(path.join(cwd, 'db/schema.ts')) as object}, {value: 42});
+});
+
+test('tsconfigAliases follows extends into packages', t => {
+	const cwd = temporaryProject(t, {
+		'tsconfig.json': JSON.stringify({extends: ['@scope/base', '@scope/base/paths.json']}),
+		'node_modules/@scope/base/package.json': '{"name": "@scope/base", "main": "index.js"}',
+		'node_modules/@scope/base/index.js': '',
+		'node_modules/@scope/base/tsconfig.json': '{"compilerOptions": {"baseUrl": "."}}',
+		'node_modules/@scope/base/paths.json': '{"compilerOptions": {"paths": {"#lib": ["lib.ts"]}}}',
+	});
+	assert.deepEqual(tsconfigAliases(cwd), {'#lib': path.join(cwd, 'node_modules/@scope/base/lib.ts')});
+});
+
+test('tsconfigAliases gives no aliases for a tsconfig it cannot read', t => {
+	assert.deepEqual(tsconfigAliases(temporaryProject(t, {'tsconfig.json': '{"compilerOptions": {'})), {});
+	assert.deepEqual(tsconfigAliases(temporaryProject(t, {'tsconfig.json': '{"extends": "missing-package"}'})), {});
+});
+
+test('environmentAliases reads JITI_ALIAS and ignores what is not JSON', () => {
+	assert.deepEqual(environmentAliases(undefined), {});
+	assert.deepEqual(environmentAliases('not json'), {});
+	assert.deepEqual(environmentAliases('{"~x": "/x"}'), {'~x': '/x'});
+});
+
+test('nodeEnvironment keeps the aliases set in JITI_ALIAS', async t => {
+	const cwd = temporaryProject(t, {
+		'tsconfig.json': '{"compilerOptions": {"paths": {"@/*": ["./*"]}}}',
+		'db/schema.ts': 'import {answer} from \'~shared/answer\';\nexport const value: number = answer;\n',
+		'shared/answer.ts': 'export const answer = 42;\n',
+	});
+	const previous = process.env.JITI_ALIAS;
+	process.env.JITI_ALIAS = JSON.stringify({'~shared': path.join(cwd, 'shared')});
+	t.after(() => {
+		if (previous === undefined) {
+			delete process.env.JITI_ALIAS;
+		} else {
+			process.env.JITI_ALIAS = previous;
+		}
 	});
 	assert.deepEqual({...await nodeEnvironment(cwd).importModule(path.join(cwd, 'db/schema.ts')) as object}, {value: 42});
 });

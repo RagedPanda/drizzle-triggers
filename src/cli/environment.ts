@@ -48,13 +48,27 @@ export function parseJsonc(text: string): unknown {
 	return JSON.parse(withoutComments.replaceAll(new RegExp(`${strings}|,(\\s*[}\\]])`, 'g'), (match, close?: string) => close ?? match));
 }
 
+/** The file an `extends` entry names: a relative path, a package's tsconfig.json, or a file inside a package. */
+function resolveExtends(file: string, parent: string): string {
+	const require = createRequire(file);
+	if (parent.startsWith('.') || path.isAbsolute(parent)) {
+		return require.resolve(parent);
+	}
+
+	try {
+		return require.resolve(`${parent}/tsconfig.json`);
+	} catch {
+		return require.resolve(parent);
+	}
+}
+
 function readPathsConfig(file: string): PathsConfig {
 	const config = parseJsonc(readFileSync(file, 'utf8')) as TsConfig;
 	const folder = path.dirname(file);
 	const parents = config.extends === undefined ? [] : [config.extends].flat();
 	const resolved: PathsConfig = {};
 	for (const parent of parents) {
-		Object.assign(resolved, readPathsConfig(createRequire(file).resolve(parent)));
+		Object.assign(resolved, readPathsConfig(resolveExtends(file, parent)));
 	}
 
 	const {baseUrl, paths} = config.compilerOptions ?? {};
@@ -70,9 +84,18 @@ function readPathsConfig(file: string): PathsConfig {
 	return resolved;
 }
 
+function readPathsConfigOrEmpty(file: string): PathsConfig {
+	try {
+		return readPathsConfig(file);
+	} catch {
+		return {};
+	}
+}
+
 /**
  * jiti aliases for the `paths` in the project's tsconfig.json, which drizzle-kit honors and jiti ignores.
  * Only the first target of each path is used, and patterns with a `*` anywhere but the end are skipped.
+ * A tsconfig that can't be read or resolved gives no aliases rather than stopping the command.
  */
 export function tsconfigAliases(cwd: string): Record<string, string> {
 	const file = path.join(cwd, 'tsconfig.json');
@@ -80,7 +103,7 @@ export function tsconfigAliases(cwd: string): Record<string, string> {
 		return {};
 	}
 
-	const {baseUrl, paths = {}, pathsFolder} = readPathsConfig(file);
+	const {baseUrl, paths = {}, pathsFolder} = readPathsConfigOrEmpty(file);
 	const base = baseUrl ?? pathsFolder ?? cwd;
 	const aliases: Record<string, string> = {};
 	for (const [pattern, [target]] of Object.entries(paths)) {
@@ -98,9 +121,23 @@ export function tsconfigAliases(cwd: string): Record<string, string> {
 	return aliases;
 }
 
+/** The aliases set in `JITI_ALIAS`, which jiti ignores once an `alias` option is passed. */
+export function environmentAliases(json: string | undefined): Record<string, string> {
+	if (json === undefined) {
+		return {};
+	}
+
+	try {
+		return JSON.parse(json) as Record<string, string>;
+	} catch {
+		return {};
+	}
+}
+
 /** The real environment: jiti loads TypeScript schema files with the same import rules as drizzle-kit. */
 export function nodeEnvironment(cwd: string): CliEnvironment {
-	const jiti = createJiti(pathToFileURL(path.join(cwd, 'index.js')).href, {interopDefault: false, alias: tsconfigAliases(cwd)});
+	const alias = {...tsconfigAliases(cwd), ...environmentAliases(process.env.JITI_ALIAS)};
+	const jiti = createJiti(pathToFileURL(path.join(cwd, 'index.js')).href, {interopDefault: false, alias});
 	return {
 		cwd,
 		print: text => process.stdout.write(`${text}\n`),
